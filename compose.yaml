@@ -1,0 +1,33 @@
+x-mongo: &mongo
+  build: .
+  command: [mongod, --replSet, cc_lab, --bind_ip_all, --oplogSize, "128", --wiredTigerCacheSizeGB, "0.25", --nounixsocket]
+  cap_add: [NET_ADMIN]
+  restart: "no"
+  stop_grace_period: 20s
+  networks: [replication]
+
+services:
+  mongo0:
+    <<: *mongo
+    hostname: mongo0
+    ports: ["127.0.0.1:${LAB_PORT0:-29101}:27017"]
+    volumes: [mongo0-data:/data/db]
+  mongo1:
+    <<: *mongo
+    hostname: mongo1
+    ports: ["127.0.0.1:${LAB_PORT1:-29102}:27017"]
+    volumes: [mongo1-data:/data/db]
+  mongo2:
+    <<: *mongo
+    hostname: mongo2
+    ports: ["127.0.0.1:${LAB_PORT2:-29103}:27017"]
+    volumes: [mongo2-data:/data/db]
+
+networks:
+  replication:
+    driver: bridge
+
+volumes:
+  mongo0-data:
+  mongo1-data:
+  mongo2-data:
