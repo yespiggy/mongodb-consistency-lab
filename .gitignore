@@ -10,6 +10,7 @@ work/
 results/
 *.log
 report.pdf
+!report/report.pdf
 report.md
 report/build/
 tmp/
