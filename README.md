@@ -47,7 +47,7 @@ The completed Docker run on 17 September 2026 passed the command-parameter and n
 
 Cells count violations / eligible checks. Timeouts are operation errors, not stale-value violations; missing successful prerequisites make checks inconclusive. RYW/MW rollback checks use an explicitly durable-history interpretation. Zero observed violations do not prove a universal guarantee.
 
-Raw measurements, server logs and the submitted report remain in the separately delivered project archive. They are not bundled into this code repository. New runs generate their own evidence in `results/` and a PDF through `make_report.py`.
+The complete original measurements and detailed logs for all three MongoDB nodes are included in [the raw-data archive](docker-run-2026-09-17-raw.zip). See [RAW_DATA.md](RAW_DATA.md) for its contents and analysis commands, and [RAW_DATA_MANIFEST.json](RAW_DATA_MANIFEST.json) for SHA-256 checksums. The original files are preserved without modification. New runs generate their own evidence in `results/` and a PDF through `make_report.py`.
 
 ## Inspect and clean up a run
 
