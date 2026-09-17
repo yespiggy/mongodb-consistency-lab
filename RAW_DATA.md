@@ -1,6 +1,6 @@
 # Original measurements and detailed server logs
 
-Download [docker-run-2026-09-17-raw.zip](docker-run-2026-09-17-raw.zip) for the complete, unmodified formal Docker run. The archive preserves the original directory and filenames. It contains 196 histories and 796 application operations from 17 September 2026; preliminary smoke tests and earlier native-process runs are excluded.
+Download [docker-run-2026-09-17-raw.zip](docker-run-2026-09-17-raw.zip) for the complete, unmodified formal Docker run. The archive preserves the original directory and filenames. It contains 208 histories and 856 application operations from 17 September 2026, including the typical 2+1 partition; preliminary smoke tests and earlier native-process runs are excluded.
 
 | File | Contents |
 |---|---|
@@ -20,9 +20,8 @@ The MongoDB log files are server diagnostic logs, not a database volume backup o
 ```bash
 python3 -m zipfile -e docker-run-2026-09-17-raw.zip results
 .venv/bin/python analyze.py results/docker-run-2026-09-17
-.venv/bin/python make_report.py results/docker-run-2026-09-17 --out report.pdf
 ```
 
-Install dependencies as described in the main README first. The analysis should report 196 histories, 796 operations/commands, 12 isolation snapshots and no parameter/isolation audit failures. Each consistency cell counts violations / eligible checks. Timeouts are not treated as stale-value violations.
+Install dependencies as described in the main README first. The analysis should report 208 histories, 856 operations/commands, 24 isolation snapshots and no parameter/isolation audit failures. Each consistency cell counts violations / eligible checks. Timeouts are not treated as stale-value violations.
 
 The original metadata retains the measurement host's local paths and container identifiers for provenance. The repository is private. New locally generated `results/` directories and loose logs remain ignored by Git; this named, archived run is intentionally included.

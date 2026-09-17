@@ -217,7 +217,9 @@ class Trial:
         ok = lambda x: bool(x and x['status']=='ok')
         checks = {k:None for k in ('RYW','MR','MW','WFR')}
         # True means a witnessed violation, False an eligible check with no violation.
-        if ok(w1) and ok(r2): checks['RYW'] = r2['value']['a'] < 1
+        later_reads = [r for r in (r1,r2) if ok(r) and ok(w1)
+                       and r['invocation_ns'] >= w1['completion_ns']]
+        if later_reads: checks['RYW'] = any(r['value']['a'] < 1 for r in later_reads)
         if ok(r1) and ok(r2): checks['MR'] = r2['value']['a'] < r1['value']['a']
         if ok(w1) and ok(w2): checks['MW'] = w2['value']['a'] < 1
         # W2 must incorporate every preceding observed version, even after a regressing read.
@@ -292,7 +294,7 @@ def main():
 
         # Network-only scenario: all mongod processes stay alive throughout.
         # Each config is tested in its own partition to avoid order confounding.
-        for scenario in ['primary_crash','network_partition','partition_rollback']:
+        for scenario in ['primary_crash','network_partition_2_1','network_partition','partition_rollback']:
             jobs = [(cfg,i) for cfg in CONFIGS for i in range(args.fault_repeats)]
             rng.shuffle(jobs)
             for cfg,i in jobs:
@@ -301,9 +303,24 @@ def main():
                 p=cluster.primary()
                 target=1-p
                 t=Trial(cluster,key,scenario,cfg)
-                if scenario != 'primary_crash': cluster.mesh.set_enabled(False)
-                t.op('W1',p)
-                t.op('R1',p)
+                if scenario == 'network_partition_2_1':
+                    majority=cluster.mesh.split_two_one(p)
+                    # The isolated old primary must step down; the two-node side
+                    # retains a voting majority and elects its eligible member.
+                    wait_for(lambda: not cluster.hello(p).get('isWritablePrimary'),40)
+                    newp=cluster.primary(exclude=p)
+                    t.op('W1',newp)
+                    t.op('R1',newp)
+                    t.op('R2',p)
+                    t.op('W2',newp)
+                    t.op('W_unavailable',p)
+                    cluster.snapshot(key+'-isolated')
+                    cluster.mesh.set_enabled(True)
+                    cluster.primary()
+                else:
+                    if scenario != 'primary_crash': cluster.mesh.set_enabled(False)
+                    t.op('W1',p)
+                    t.op('R1',p)
                 if scenario=='primary_crash':
                     # A healthy-replication failover; no artificial durability barrier after W1.
                     cluster.stop_node(p,crash=True)
@@ -320,7 +337,7 @@ def main():
                     cluster.snapshot(key+'-isolated')
                     cluster.mesh.set_enabled(True)
                     cluster.primary()
-                else:
+                elif scenario=='partition_rollback':
                     # Firewall rules prevent W1 replication. Kill old primary, then
                     # heal surviving nodes; W2 executes on an independently elected branch.
                     cluster.stop_node(p,crash=True)

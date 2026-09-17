@@ -11,3 +11,5 @@ results/
 *.log
 report.pdf
 report.md
+report/build/
+tmp/

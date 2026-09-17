@@ -29,7 +29,11 @@ class DockerPartition:
                             'iptables -N CC_LAB_IN; iptables -N CC_LAB_OUT; '
                             'iptables -I INPUT 1 -j CC_LAB_IN; iptables -I OUTPUT 1 -j CC_LAB_OUT')
 
-    def set_enabled(self, enabled):
+    def set_groups(self, groups, label):
+        """Allow traffic within each group and drop traffic between groups."""
+        group_for = {node: group for group, nodes in enumerate(groups) for node in nodes}
+        if set(group_for) != {0, 1, 2}:
+            raise ValueError(f'Partition groups must contain nodes 0, 1, and 2 exactly once: {groups}')
         # A complete cycle includes all live containers. After a node restart its
         # network namespace/rules may reset, so create chains again if necessary.
         for i in range(3):
@@ -42,22 +46,31 @@ class DockerPartition:
                 'iptables -C OUTPUT -j CC_LAB_OUT 2>/dev/null || iptables -I OUTPUT 1 -j CC_LAB_OUT',
                 'iptables -F CC_LAB_IN', 'iptables -F CC_LAB_OUT',
             ]
-            if not enabled:
+            if len(groups) > 1:
                 for j, address in enumerate(self.addresses):
-                    if i != j:
+                    if i != j and group_for[i] != group_for[j]:
                         commands += [f'iptables -A CC_LAB_IN -s {address} -j DROP',
                                      f'iptables -A CC_LAB_OUT -d {address} -j DROP']
             commands += ['iptables -S CC_LAB_IN', 'iptables -S CC_LAB_OUT']
             rules=self.cluster.compose('exec','-T','--user','root',f'mongo{i}',
                                        'sh','-eu','-c','; '.join(commands))
             self.cluster.log.emit('firewall_rules',node=i,rules=rules)
-        self.enabled=enabled
-        self.cluster.log.emit('network',enabled=enabled,partition='1+1+1',
+        self.enabled=len(groups) == 1
+        self.cluster.log.emit('network',enabled=self.enabled,partition=label,groups=groups,
                               mechanism='container INPUT/OUTPUT peer-IP DROP',addresses=self.addresses)
         # A partition must not accidentally remove the application's access.
         for i,p in enumerate(self.cluster.procs):
             if p and p.poll() is None:
                 self.cluster.clients[i].admin.command('ping')
+
+    def set_enabled(self, enabled):
+        groups=[[0,1,2]] if enabled else [[0],[1],[2]]
+        self.set_groups(groups, 'healed' if enabled else '1+1+1')
+
+    def split_two_one(self, minority):
+        majority=[i for i in range(3) if i != minority]
+        self.set_groups([majority,[minority]],'2+1')
+        return majority
 
     def close(self):
         pass

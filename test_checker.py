@@ -26,9 +26,13 @@ class CheckerTests(unittest.TestCase):
         c=check(dict(W1=op('W1',start=0),R1=op('R1',1,2),R2=op('R2',0,4),W2=op('W2',1,6)))
         self.assertEqual(c,dict(RYW=True,MR=True,MW=False,WFR=False))
 
+    def test_first_read_stale_second_read_fresh_still_violates_ryw(self):
+        c=check(dict(W1=op('W1',start=0),R1=op('R1',0,2),R2=op('R2',1,4),W2=op('W2',1,6)))
+        self.assertTrue(c['RYW'])
+
     def test_timeout_not_violation(self):
         c=check(dict(W1=op('W1',start=0),R1=op('R1',1,2),R2=op('R2',start=4,error=True),W2=op('W2',1,6)))
-        self.assertEqual(c,dict(RYW=None,MR=None,MW=False,WFR=False))
+        self.assertEqual(c,dict(RYW=False,MR=None,MW=False,WFR=False))
 
     def test_unknown_write_not_acknowledged(self):
         c=check(dict(W1=op('W1',start=0,error=True),R1=op('R1',start=2,error=True),R2=op('R2',0,4),W2=op('W2',0,6)))

@@ -1,47 +1,47 @@
 {
   "run": "docker-run-2026-09-17",
-  "description": "Unmodified original Docker experiment files; excludes preliminary and native-process runs.",
+  "description": "Unmodified original Docker experiment files including the 2+1 partition; excludes preliminary and native-process runs.",
   "files": {
     "audit.json": {
       "bytes": 216,
-      "sha256": "f83b95f147168217f47b8a93079fe2a418cd35cb340740191c05aa3ce603cac3"
+      "sha256": "a9f54ebc8d6d85ca571c738bb1026b1f97cb8eb456142c810017aa6d10d31e1e"
     },
     "history.jsonl": {
-      "bytes": 1684775,
-      "sha256": "5e86093fcd70bb03a3cf54730c11e2503e5350e8b1771eaa62fac2835d5714fc"
+      "bytes": 1993918,
+      "sha256": "7452ec58b0b66a889703da439685be8e68ae5d96a832c7582eb0fb0fb37ab82e"
     },
     "metadata.json": {
-      "bytes": 14412,
-      "sha256": "db64ad26c1ec29d2629af1d77d26c225f70adb8777dca53a4b26476163e3adf3"
+      "bytes": 14656,
+      "sha256": "35b916bae39ee8691bbf56f81dacb6bf2464265827283cd1f48e187613fdf45d"
     },
     "mongod-0.log": {
-      "bytes": 3874727,
-      "sha256": "5a64d4a10f865e9dcde0b70e126499067acc5a3179887b0b54e055e0ec98533e"
+      "bytes": 3332828,
+      "sha256": "8f8d35932ea917279b3af887e86f90a4ec46cf95701cae92d4f8f0e75624761d"
     },
     "mongod-1.log": {
-      "bytes": 3230973,
-      "sha256": "ea218543b238ac69fe0d9363afad8ca46e0f116c172d4e0a85931bba116c2372"
+      "bytes": 3861096,
+      "sha256": "820703585bf908b807d664a30bf21b95f3dfc87084434de7d74e393eac79daac"
     },
     "mongod-2.log": {
-      "bytes": 4855718,
-      "sha256": "78317de414eb0c75bd08ea00cc17ada12f3b5c5e9c85f317a03963de873c814a"
+      "bytes": 4895550,
+      "sha256": "601fa460c9caae67c888557a3096d8193276a89b3bdeced817361bb8bc4ec784"
     },
     "summary.json": {
-      "bytes": 16347,
-      "sha256": "ef1b2d0dd3a54cbd0495cf6818a603bc40ab82766de17e67a043f5d32d7a9716"
+      "bytes": 19053,
+      "sha256": "77015d0c87ffc6871efd4b49dc732d2f192ee434424fda56082fcaa61c5d9f69"
     },
     "summary.md": {
-      "bytes": 1649,
-      "sha256": "5d0c4a2bb83100882244d703b4256c06bdc23f7568d7e8a15ef5a545c4f4a6a7"
+      "bytes": 1911,
+      "sha256": "ca6ed296f844217542b66b1da5bd7ed12085f68e38b95082e751847324193495"
     },
     "trials.json": {
-      "bytes": 559669,
-      "sha256": "bb53c38e532e30ee93a43449013e0d21a2a2e68eea67291b01b1c6967c69f316"
+      "bytes": 621940,
+      "sha256": "e66862565e1b4ec7f32cf447964ad43012a031f710b681f3e9812ec6d661d6f7"
     }
   },
   "archive": {
     "filename": "docker-run-2026-09-17-raw.zip",
-    "bytes": 1082193,
-    "sha256": "46760dc3c8b969cb4e991316126f54b5e12cedc3f595ba4cd16ea89cc3a7acbd"
+    "bytes": 1166386,
+    "sha256": "39e5fe215859a0ff8fbfcaea39df2817ed105ef9233f8c459e7d8521f9264771"
   }
 }

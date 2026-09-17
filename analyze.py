@@ -55,12 +55,20 @@ def analyze(root):
         for node,status in e['nodes'].items():
             if not isinstance(status,dict):
                 isolation_failures.append([e['label'],node,'no status']);continue
-            if status['myState']==1:
+            scenario=by_trial[e['label'].removesuffix('-isolated')]['scenario']
+            if scenario=='network_partition' and status['myState']==1:
                 isolation_failures.append([e['label'],node,'still primary'])
             for member in status['members']:
-                if not member.get('self') and member['health']!=0:
+                if member.get('self'):
+                    continue
+                peer=int(member['name'].split('mongo',1)[1].split(':',1)[0])
+                minority=by_trial[e['label'].removesuffix('-isolated')]['operations']['R2']['node']
+                should_reach = scenario=='network_partition_2_1' and int(node) != minority and peer != minority
+                if scenario=='network_partition' and member['health']!=0:
                     isolation_failures.append([e['label'],node,member['name'],'still reachable'])
-    expected_isolation=sum(r['scenario']=='network_partition' for r in rows)
+                if scenario=='network_partition_2_1' and should_reach != (member['health']==1):
+                    isolation_failures.append([e['label'],node,member['name'],'unexpected 2+1 reachability'])
+    expected_isolation=sum(r['scenario'] in ('network_partition','network_partition_2_1') for r in rows)
     if len(isolation)!=expected_isolation:
         isolation_failures.append(['missing snapshots',len(isolation),expected_isolation])
     audit=dict(histories=len(rows),operations=measured_ops,wire_commands=len(wire),
