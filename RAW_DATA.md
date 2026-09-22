@@ -1,6 +1,6 @@
 # Formal A--H measurements and detailed server logs
 
-Download [matrix8-full-20260922-raw.zip](matrix8-full-20260922-raw.zip) for the complete, unmodified formal Docker run. The archive contains 416 histories and 1,712 application operations from 22 September 2026 across all eight A--H configurations and seven operating scenarios. Preliminary smoke tests are excluded. The earlier `docker-run-2026-09-17-raw.zip` is retained only as legacy evidence and uses obsolete configuration IDs.
+Download [matrix8-timeout5s-full-20260922-raw.zip](matrix8-timeout5s-full-20260922-raw.zip) for the complete formal Docker run. The archive contains 640 histories and 2,720 attempted application operations from 22 September 2026 across all eight A--H configurations and seven operating scenarios. It uses 5000 ms read and write-concern deadlines and a 7000 ms socket timeout. Preliminary and interrupted runs are excluded. Earlier archives are retained only as legacy evidence.
 
 | File | Contents |
 |---|---|
@@ -15,14 +15,14 @@ The MongoDB log files are server diagnostic logs, not a database volume backup o
 
 ## Verify and analyze
 
-[RAW_DATA_MANIFEST.json](RAW_DATA_MANIFEST.json) records SHA-256 values for every original file and the ZIP. Extract the archive into a temporary directory, then analyze its `matrix8-full-01` directory:
+[RAW_DATA_MANIFEST.json](RAW_DATA_MANIFEST.json) records SHA-256 values for every original file and the ZIP. Extract the archive into a temporary directory, then analyze that directory:
 
 ```bash
 mkdir -p tmp/raw-verification
-python3 -m zipfile -e matrix8-full-20260922-raw.zip tmp/raw-verification
-.venv/bin/python analyze.py tmp/raw-verification/matrix8-full-01
+python3 -m zipfile -e matrix8-timeout5s-full-20260922-raw.zip tmp/raw-verification
+.venv/bin/python analyze.py tmp/raw-verification
 ```
 
-The analysis should report 416 histories, 1,712 operations/commands, 48 isolation snapshots and no parameter/isolation audit failures. Each consistency cell counts violations / eligible checks. Timeouts are not treated as stale-value violations.
+The analysis should report 640 histories, 2,720 attempted operations, 2,700 wire commands, 20 pre-command availability errors, 160 isolation snapshots, and no parameter, wire-coverage, or isolation audit failures. Each consistency cell counts violations / eligible checks. Timeouts are not treated as stale-value violations.
 
 The original metadata retains the measurement host's local paths and container identifiers for provenance. The repository is private. New locally generated `results/` directories and loose logs remain ignored by Git; this named, archived run is intentionally included.

@@ -13,4 +13,5 @@ report.pdf
 !report/report.pdf
 report.md
 report/build/
+report/build-*/
 tmp/

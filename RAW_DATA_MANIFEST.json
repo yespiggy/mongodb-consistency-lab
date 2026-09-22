@@ -1,47 +1,47 @@
 {
-  "run": "matrix8-full-01",
-  "description": "Unmodified formal A-H Docker experiment files from 22 September 2026; excludes preliminary smoke runs.",
+  "run": "matrix8-timeout5s-full-02",
+  "description": "Formal A-H Docker experiment from 22 September 2026 with 5000 ms read/write deadlines and ten repetitions per fault configuration.",
   "files": {
     "audit.json": {
-      "bytes": 218,
-      "sha256": "1db17b4ea4e906bf48c59abe3677a898877dc1e43714a204d459ea7dc7dc7a94"
+      "bytes": 2600,
+      "sha256": "14cf2ccd20818408882f68e6e54064ff450b1278b73607886680e9dfb3a066ec"
     },
     "history.jsonl": {
-      "bytes": 3901367,
-      "sha256": "ae5b5b6e35ab3b5ae78d777d2f51b719539ab14044b6a1feb56ace4bf899309f"
+      "bytes": 7902696,
+      "sha256": "0e28faaedbf07bd44f6154afdaa098b4c81551e37b84f04c8a2cd4e5a5f7feea"
     },
     "metadata.json": {
-      "bytes": 14983,
-      "sha256": "61eaaef0eebb69639e447b37e63571a1d1761246f5dd0e13021303bc3daf64d5"
+      "bytes": 15029,
+      "sha256": "6a9bfc556e995ab46511235c2f253d53db3b0f70ed8cb928ef8a25b5284a1d0e"
     },
     "mongod-0.log": {
-      "bytes": 7310813,
-      "sha256": "d8e236d24d52775831a7b2b803e7bbc0fc2f4bb12dbfd4d232c7d70a7c97174b"
+      "bytes": 25738281,
+      "sha256": "2a7c724f0b2c6172ff359e04e06c30d98f0539a658ea4cd1872ceb5646db9302"
     },
     "mongod-1.log": {
-      "bytes": 8386268,
-      "sha256": "8ed5b6db48ab8ded5d1f0b7fa88828952180b0c41c3aa7b5e74e09581d2cd382"
+      "bytes": 25347054,
+      "sha256": "915c11958c0ad006fcc2e7999743423926f478753d21ff37c4ac5d29d2046f59"
     },
     "mongod-2.log": {
-      "bytes": 10388192,
-      "sha256": "7e23ffbf204ae5a4c660a056105ca5130cfe2f85907b9da303e8f7313ecccb1c"
+      "bytes": 35865079,
+      "sha256": "69a6cd1f2500f757e016ec75965129df0ac042980aa0edee050be5ea921c77f5"
     },
     "summary.json": {
-      "bytes": 38201,
-      "sha256": "0cf45e92e8468b5340be7025becab00c92d989505970c08a924ff55cae91dea2"
+      "bytes": 38445,
+      "sha256": "c9381f115f97d06e1450a35a77255961555ed9fe33f6df6621fa9fce602c7304"
     },
     "summary.md": {
-      "bytes": 3597,
-      "sha256": "a2c0ce52ce59af3188bfec4639c35c5da9487fac9aba2dea9c370084b5775c76"
+      "bytes": 3751,
+      "sha256": "8872b4aa9b8b2bc437c28514bc184d8678c39fce8074cc24e2340e7836cfdcaa"
     },
     "trials.json": {
-      "bytes": 1222534,
-      "sha256": "61f447b578ef38793f5654c8b36a6b157b92293a9fc40ed1fbea6e42b37a0a28"
+      "bytes": 2129420,
+      "sha256": "1a82628354d277af55bb4c0b2abd6029e6c695f61afd19dc1772627febaec5af"
     }
   },
   "archive": {
-    "filename": "matrix8-full-20260922-raw.zip",
-    "bytes": 2280096,
-    "sha256": "31b62a99660b5fff7bfa1a18b099720c6ec6c1780f191723a1e88b131e3cc0d3"
+    "filename": "matrix8-timeout5s-full-20260922-raw.zip",
+    "bytes": 7673191,
+    "sha256": "348d2f7913dde76434b0ff0daf7d815ec2ea6504c4a0d02147cf027a52392fc3"
   }
 }

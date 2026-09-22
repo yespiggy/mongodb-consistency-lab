@@ -34,9 +34,11 @@ def analyze(root):
     wire=[e for e in events if e['kind']=='wire_command']
     by_trial={r['trial']:r for r in rows}
     failures=[]
+    wire_keys=[]
     for e in wire:
         cmd=e['command']
         _,key,label=cmd['comment'].split(':')
+        wire_keys.append((key,label))
         cfg=by_trial[key]['config']
         if cfg not in configs:
             failures.append([key,label,'configuration missing from metadata',cfg])
@@ -54,7 +56,29 @@ def analyze(root):
             if not causal and 'afterClusterTime' in read:
                 failures.append([key,label,'unexpected causal bound'])
     measured_ops=sum(len(row['operations']) for row in rows)
-    if len(wire)!=measured_ops: failures.append(['global','wire-count',len(wire),measured_ops])
+    wire_key_set=set(wire_keys)
+    duplicate_wire_commands=len(wire_keys)-len(wire_key_set)
+    precommand_errors=[]
+    wire_coverage_failures=[]
+    for row in rows:
+        for label,op in row['operations'].items():
+            key=(row['trial'],label)
+            if key in wire_key_set:
+                continue
+            # PyMongo can reject an operation before sending a command, for example
+            # while a restarted direct connection temporarily has no replica-set
+            # session capability. Such attempts are real availability errors but
+            # cannot have a command-monitoring event.
+            if op['status']=='error' and op.get('error_type') in {
+                    'ConfigurationError','ServerSelectionTimeoutError','AutoReconnect'}:
+                precommand_errors.append(dict(trial=row['trial'],label=label,
+                                              error_type=op.get('error_type')))
+            else:
+                wire_coverage_failures.append([row['trial'],label,op['status'],
+                                               op.get('error_type')])
+    if duplicate_wire_commands:
+        wire_coverage_failures.append(['global','duplicate-wire-commands',
+                                       duplicate_wire_commands])
     isolation=[e for e in events if e['kind']=='topology' and e['label'].endswith('-isolated')]
     isolation_failures=[]
     for e in isolation:
@@ -78,6 +102,8 @@ def analyze(root):
     if len(isolation)!=expected_isolation:
         isolation_failures.append(['missing snapshots',len(isolation),expected_isolation])
     audit=dict(histories=len(rows),operations=measured_ops,wire_commands=len(wire),
+               precommand_errors=precommand_errors,
+               wire_coverage_failures=wire_coverage_failures,
                command_parameter_failures=failures,
                isolation_snapshots=len(isolation),isolation_failures=isolation_failures,
                trial_ids_unique=len(by_trial)==len(rows),
@@ -95,7 +121,7 @@ def analyze(root):
     (root/'summary.md').write_text('\n'.join(lines)+'\n')
     print('\n'.join(lines))
     print(json.dumps(audit,indent=2))
-    if failures or isolation_failures or not audit['trial_ids_unique'] or audit['run_status']!='complete':
+    if failures or wire_coverage_failures or isolation_failures or not audit['trial_ids_unique'] or audit['run_status']!='complete':
         raise SystemExit('Audit failed; inspect results before using them in a report')
     return summary,audit
 

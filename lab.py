@@ -29,8 +29,9 @@ CONFIGS = {
     'G': dict(causal=False, read='majority', write='majority'),
     'H': dict(causal=True, read='majority', write='majority'),
 }
-MAX_READ_MS = 700
-WRITE_TIMEOUT_MS = 900
+MAX_READ_MS = 5000
+SOCKET_TIMEOUT_MS = 7000
+WRITE_TIMEOUT_MS = 5000
 
 
 class Log:
@@ -76,7 +77,7 @@ class Cluster:
         self.clients = [MongoClient('127.0.0.1', port, directConnection=True,
                        retryReads=False, retryWrites=False,
                        serverSelectionTimeoutMS=1600, connectTimeoutMS=800,
-                       socketTimeoutMS=2500, heartbeatFrequencyMS=500,
+                       socketTimeoutMS=SOCKET_TIMEOUT_MS, heartbeatFrequencyMS=500,
                        event_listeners=[Commands(self.log)]) for port in self.back]
 
 
@@ -247,7 +248,7 @@ def main():
     ap.add_argument('--normal', type=int, default=20)
     ap.add_argument('--lag', type=int, default=10)
     ap.add_argument('--failure', type=int, default=10)
-    ap.add_argument('--fault-repeats', type=int, default=3)
+    ap.add_argument('--fault-repeats', type=int, default=10)
     ap.add_argument('--base-port', type=int, default=29101)
     ap.add_argument('--seed', type=int, default=419)
     args = ap.parse_args()
@@ -269,7 +270,8 @@ def main():
                 source_sha256={name:hashlib.sha256((Path(__file__).parent/name).read_bytes()).hexdigest()
                                for name in ['lab.py','docker_backend.py','compose.yaml','Dockerfile']},
                 configs=CONFIGS, arguments={k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()},
-                timeouts=dict(read_ms=MAX_READ_MS, write_ms=WRITE_TIMEOUT_MS), status='running')
+                timeouts=dict(read_ms=MAX_READ_MS, socket_ms=SOCKET_TIMEOUT_MS,
+                              write_ms=WRITE_TIMEOUT_MS), status='running')
     (args.out/'metadata.json').write_text(json.dumps(meta, indent=2))
     try:
         cluster.start()

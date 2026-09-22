@@ -30,7 +30,7 @@ Full experiment and analysis:
 The submission report source is `report/main.tex`. Compile it with Tectonic or a standard
 LaTeX installation after updating the group-member line on the title page.
 
-With the eight-configuration matrix, the default run contains 416 histories. Use `--base-port 30101` if the default ports are occupied. The runner heals the network and stops its containers after collecting evidence, retaining their volumes.
+With the eight-configuration matrix, the default run contains 640 histories: 20 normal histories per configuration and 10 per configuration in every other scenario. Measured read, socket, and write-concern timeouts are 5000, 7000, and 5000 ms. Use `--base-port 30101` if the default ports are occupied. The runner heals the network and stops its containers after collecting evidence, retaining their volumes.
 
 ## Configurations
 
@@ -51,11 +51,11 @@ Scenarios: normal operation, 3-second replica lag, secondary crash, primary cras
 
 ## Results and interpretation
 
-The formal A--H Docker run completed on 22 September 2026 with 416 histories and 1,712 instrumented operations. It passed every command-parameter and network-isolation audit. Its aggregate results are in [MEASURED_RESULTS.md](MEASURED_RESULTS.md). Eight checker unit tests passed for the current checker logic.
+The formal A--H Docker run completed on 22 September 2026 with 640 histories and 2,720 attempted operations. Command monitoring captured 2,700 wire commands; 20 rollback operations were rejected by PyMongo before transmission while restarted direct connections temporarily reported no session capability. The run passed all command-parameter, wire-coverage, and network-isolation audits. Its aggregate results are in [MEASURED_RESULTS.md](MEASURED_RESULTS.md). Eight checker unit tests passed.
 
 Cells count violations / eligible checks. Timeouts are operation errors, not stale-value violations; missing successful prerequisites make checks inconclusive. RYW/MW rollback checks use an explicitly durable-history interpretation. Zero observed violations do not prove a universal guarantee.
 
-The complete formal measurements and detailed logs for all three MongoDB nodes are included in [the A--H raw-data archive](matrix8-full-20260922-raw.zip). See [RAW_DATA.md](RAW_DATA.md) for its contents and analysis commands, and [RAW_DATA_MANIFEST.json](RAW_DATA_MANIFEST.json) for SHA-256 checksums. The earlier 17 September archive is retained only as legacy evidence. New runs generate their own evidence in `results/`.
+The complete formal measurements and detailed logs for all three MongoDB nodes are included in [the 5-second-timeout A--H raw-data archive](matrix8-timeout5s-full-20260922-raw.zip). See [RAW_DATA.md](RAW_DATA.md) for its contents and analysis commands, and [RAW_DATA_MANIFEST.json](RAW_DATA_MANIFEST.json) for SHA-256 checksums. Earlier archives are retained only as legacy evidence. New runs generate their own evidence in `results/`.
 
 ## Inspect and clean up a run
 
