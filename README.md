@@ -30,26 +30,32 @@ Full experiment and analysis:
 The submission report source is `report/main.tex`. Compile it with Tectonic or a standard
 LaTeX installation after updating the group-member line on the title page.
 
-The default run contains 208 histories and 856 application operations. Use `--base-port 30101` if the default ports are occupied. The runner heals the network and stops its containers after collecting evidence, retaining their volumes.
+With the eight-configuration matrix, the default run contains 416 histories. Use `--base-port 30101` if the default ports are occupied. The runner heals the network and stops its containers after collecting evidence, retaining their volumes.
 
 ## Configurations
 
 | ID | Causal tracking | Read concern | Write concern |
 |---|---|---|---|
 | A | off | local | 1 |
-| B | off | majority | majority |
-| C | on | majority | 1 |
-| D | on | majority | majority |
+| B | on | local | 1 |
+| C | off | local | majority |
+| D | on | local | majority |
+| E | off | majority | 1 |
+| F | on | majority | 1 |
+| G | off | majority | majority |
+| H | on | majority | majority |
+
+The rows form four adjacent matched causal-session pairs: A/B (`local`, `w:1`), C/D (`local`, `majority`), E/F (`majority`, `w:1`), and G/H (`majority`, `majority`). Within each pair, causal tracking is the only changed factor. Configurations B, D, F, and H reproduce the four read-concern/write-concern combinations from MongoDB's causal-consistency table; A, C, E, and G are their non-causal controls.
 
 Scenarios: normal operation, 3-second replica lag, secondary crash, primary crash, a typical 2+1 network partition, complete 1+1+1 isolation, and partition followed by failover/rollback. Crash injection uses container SIGKILL. Partition injection uses container-local iptables with NET_ADMIN to block peer traffic while preserving host-client access. In the 2+1 experiment the current primary is isolated, the two-node majority elects a new primary and remains writable, and the client probes both sides. Election timeout is 15 seconds.
 
 ## Results and interpretation
 
-The completed Docker run on 17 September 2026 passed the command-parameter and network-isolation audits. Its aggregate results are in [MEASURED_RESULTS.md](MEASURED_RESULTS.md). Seven checker unit tests passed.
+The formal A--H Docker run completed on 22 September 2026 with 416 histories and 1,712 instrumented operations. It passed every command-parameter and network-isolation audit. Its aggregate results are in [MEASURED_RESULTS.md](MEASURED_RESULTS.md). Eight checker unit tests passed for the current checker logic.
 
 Cells count violations / eligible checks. Timeouts are operation errors, not stale-value violations; missing successful prerequisites make checks inconclusive. RYW/MW rollback checks use an explicitly durable-history interpretation. Zero observed violations do not prove a universal guarantee.
 
-The complete original measurements and detailed logs for all three MongoDB nodes are included in [the raw-data archive](docker-run-2026-09-17-raw.zip). See [RAW_DATA.md](RAW_DATA.md) for its contents and analysis commands, and [RAW_DATA_MANIFEST.json](RAW_DATA_MANIFEST.json) for SHA-256 checksums. The original files are preserved without modification. New runs generate their own evidence in `results/`.
+The complete formal measurements and detailed logs for all three MongoDB nodes are included in [the A--H raw-data archive](matrix8-full-20260922-raw.zip). See [RAW_DATA.md](RAW_DATA.md) for its contents and analysis commands, and [RAW_DATA_MANIFEST.json](RAW_DATA_MANIFEST.json) for SHA-256 checksums. The earlier 17 September archive is retained only as legacy evidence. New runs generate their own evidence in `results/`.
 
 ## Inspect and clean up a run
 

@@ -14,6 +14,8 @@
 \usepackage{fancyhdr}
 \usepackage{hyperref}
 \usepackage{graphicx}
+\usepackage[section]{placeins}
+\usepackage{float}
 
 \definecolor{navy}{HTML}{183B56}
 \definecolor{teal}{HTML}{087F83}
@@ -22,6 +24,7 @@
 \hypersetup{colorlinks=true,linkcolor=navy,urlcolor=teal,citecolor=teal,pdftitle={Client-Centric Consistency in MongoDB}}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{5pt}
+\setlength{\emergencystretch}{2em}
 \setlist{nosep,leftmargin=5mm}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcommand{\ok}{\textcolor{teal}{G}}
@@ -52,30 +55,31 @@
     Course & DSA5208 Distributed Systems\\
     Database & MongoDB Community 7.0.32\\
     Deployment & Three Docker containers, one replica set\\
-    Experiment date & 17 September 2026\\
+    Experiment date & 22 September 2026\\
     Group & \groupmembers
   \end{tabular}
   \vfill
   \color{black}
   \textbf{Submission note.} The report is generated from an audited formal run containing
-  208 client histories and 856 database commands. The accompanying archive includes the
+  416 client histories and 1712 database commands. The accompanying archive includes the
   raw histories, three server logs, metadata, checksums, and reproduction scripts.
 \end{titlepage}
 
 \begin{abstract}
 This project evaluates four client-centric consistency properties---read-your-writes,
 monotonic reads, monotonic writes, and writes-follow-reads---in a three-member MongoDB
-replica set. We vary causal history tracking, read concern, and write concern across four
-client configurations. We then execute the same application history during normal
-operation, deliberate replica lag, secondary and primary crashes, a typical 2+1 network
-partition, complete 1+1+1 isolation, and a partition followed by rollback. The formal run
-contains 208 histories and 856 instrumented commands. Weak or non-causal configurations
-returned stale values under lag and partition, while causally tracked configurations
-waited or failed rather than returning values older than their causal lower bound. A 2+1
-partition additionally showed that the majority side remained writable while the isolated
-minority rejected writes after its former primary stepped down. The observations agree
-with the predicted distinction between consistency of successful observations and
-availability.
+replica set. Eight client configurations form a complete $2\times2\times2$ matrix over
+causal history tracking, read concern, and
+write concern. The same application history is exercised under seven equally important
+operating scenarios: normal operation, deliberate replica lag, secondary failure, primary
+failure, a 2+1 network partition, complete 1+1+1 isolation, and partition-induced rollback.
+The formal run contains 416 histories and 1712 instrumented commands. Normal operation and
+single-node failures established the healthy and failover baselines. Replica lag and both
+partition patterns exposed the difference between stale successful reads and operations
+that wait or fail to preserve causal order. The rollback scenario exposed the durability
+consequences of acknowledged $w:1$ writes. Across the full matrix, the observations agree
+with the predicted client-centric guarantees and demonstrate that consistency and
+availability must be interpreted together.
 \end{abstract}
 
 \tableofcontents
@@ -130,12 +134,13 @@ Docker Desktop and Docker Compose are required. From the repository root:
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m unittest -v test_checker.py
-.venv/bin/python run.py --work-dir work/full --out results/full
-.venv/bin/python analyze.py results/full
+.venv/bin/python run.py --work-dir work/matrix8-full-01 \
+  --out results/matrix8-full-01
+.venv/bin/python analyze.py results/matrix8-full-01
 \end{lstlisting}
 
 The runner builds the pinned MongoDB image, creates fresh containers and volumes, calls
-\texttt{replSetInitiate}, waits for one primary and two secondaries, performs the tests,
+the replica-set initialization command, waits for one primary and two secondaries, performs the tests,
 heals all partitions, collects logs, and stops the containers. New directories are required
 for every run, preventing accidental reuse of earlier data.
 
@@ -155,12 +160,21 @@ to respond quickly \cite{mongo-causal,pymongo-session}.
 ID & Causal tracking & Read concern & Write concern\\
 \midrule
 A & off & local & $w:1$\\
-B & off & majority & $w:\text{majority}$\\
-C & on & majority & $w:1$\\
-D & on & majority & $w:\text{majority}$\\
+B & on & local & $w:1$\\
+C & off & local & $w:\text{majority}$\\
+D & on & local & $w:\text{majority}$\\
+E & off & majority & $w:1$\\
+F & on & majority & $w:1$\\
+G & off & majority & $w:\text{majority}$\\
+H & on & majority & $w:\text{majority}$\\
 \bottomrule
 \end{tabular}
 \end{table}
+
+The table is ordered as four adjacent matched pairs: A/B, C/D, E/F, and G/H. Within
+each pair, read concern and write concern are fixed and only causal tracking is
+changed. This makes the causal-session effect identifiable without changing the
+other two client settings at the same time.
 
 Table~\ref{tab:predictions} records the predictions made from the documented causal-session
 matrix. G means a documented guarantee for successful operations under the stated settings;
@@ -176,9 +190,13 @@ mean every execution must show a violation.
 Configuration & RYW & MR & MW & WFR\\
 \midrule
 A: local/$w:1$, causal off & \noguarantee & \noguarantee & \noguarantee & \noguarantee\\
-B: majority/majority, causal off & \noguarantee & \noguarantee & \noguarantee & \noguarantee\\
-C: majority/$w:1$, causal on & \noguarantee & \ok & \noguarantee & \ok\\
-D: majority/majority, causal on & \ok & \ok & \ok & \ok\\
+B: local/$w:1$, causal on & \noguarantee & \noguarantee & \noguarantee & \noguarantee\\
+C: local/majority, causal off & \noguarantee & \noguarantee & \noguarantee & \noguarantee\\
+D: local/majority, causal on & \ok & \noguarantee & \ok & \noguarantee\\
+E: majority/$w:1$, causal off & \noguarantee & \noguarantee & \noguarantee & \noguarantee\\
+F: majority/$w:1$, causal on & \noguarantee & \ok & \noguarantee & \ok\\
+G: majority/majority, causal off & \noguarantee & \noguarantee & \noguarantee & \noguarantee\\
+H: majority/majority, causal on & \ok & \ok & \ok & \ok\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -253,94 +271,208 @@ partition snapshot.
 
 \section{Results}
 
-The formal run completed 208 histories and 856 application commands. All 856 commands had a
-corresponding wire-level instrumentation event. Twenty-four isolated topology snapshots were
+The formal run completed 416 histories and 1712 application commands. Every command had a
+corresponding wire-level instrumentation event. Forty-eight isolated topology snapshots were
 captured. The audit found no incorrect concern parameters and no network-topology failures.
-In the following tables, cells are \emph{violations/eligible checks}; ``--'' means no eligible
-check. The final column is operation errors/attempts.
+In every scenario table, cells are \emph{violations/eligible checks}; ``--'' means that a
+prerequisite operation did not return successfully, so the property was inconclusive. The
+final column is operation errors/attempts. Errors are availability outcomes, not consistency
+violations.
 
-\begin{table}[ht]
+\subsection{Normal operation}
+\begin{table}[H]
 \centering\small
-\caption{Normal operation, lag, and node-failure results.}
-\begin{tabular}{@{}llrrrrr@{}}
-\toprule
-Scenario & Config & RYW & MR & MW & WFR & Errors\\
-\midrule
-Normal & A & 0/20 & 0/20 & 0/20 & 0/20 & 0/80\\
-Normal & B & 0/20 & 0/20 & 0/20 & 0/20 & 0/80\\
-Normal & C & 0/20 & 0/20 & 0/20 & 0/20 & 0/80\\
-Normal & D & 0/20 & 0/20 & 0/20 & 0/20 & 0/80\\
-Replica lag & A & 10/10 & 10/10 & 0/10 & 0/10 & 0/40\\
-Replica lag & B & 10/10 & 10/10 & 0/10 & 0/10 & 0/40\\
-Replica lag & C & 0/10 & -- & 0/10 & 0/10 & 10/40\\
-Replica lag & D & 0/10 & -- & 0/10 & 0/10 & 10/40\\
-Secondary crash & A--D & 0/10 each & 0/10 each & 0/10 each & 0/10 each & 0/40 each\\
-Primary crash & A--D & 0/3 each & 0/3 each & 0/3 each & 0/3 each & 0/12 each\\
-\bottomrule
+\caption{Normal operation: violations/eligible checks and errors/operations.}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule Config & RYW & MR & MW & WFR & Errors\\ \midrule
+A & 0/20 & 0/20 & 0/20 & 0/20 & 0/80\\
+B & 0/20 & 0/20 & 0/20 & 0/20 & 0/80\\
+C & 0/20 & 0/20 & 0/20 & 0/20 & 0/80\\
+D & 0/20 & 0/20 & 0/20 & 0/20 & 0/80\\
+E & 16/20 & 0/20 & 0/20 & 0/20 & 0/80\\
+F & 0/20 & 0/20 & 0/20 & 0/20 & 0/80\\
+G & 0/20 & 0/20 & 0/20 & 0/20 & 0/80\\
+H & 0/20 & 0/20 & 0/20 & 0/20 & 0/80\\ \bottomrule
 \end{tabular}
 \end{table}
 
-Under replica lag, A and B returned the stale value in every eligible RYW and MR check.
-Majority visibility alone did not preserve this client's position in history. In contrast,
-C and D sent a causal lower bound; R2 waited until its 700 ms deadline and returned an error
-rather than an older value. R1 remained a successful post-W1 read, so RYW was eligible and
-non-violating, while MR was inconclusive because R2 returned no value.
+All nodes were healthy and R2 targeted \texttt{mongo2}. Seven configurations showed no
+violation. E (non-causal, majority read, $w:1$) produced 16 RYW witnesses: W1 was acknowledged
+by the primary before it became majority committed, so R1 or R2 could legally return the
+older majority-committed snapshot. F used the same concerns but propagated causal time and
+returned no stale successful read. This is an empirical counterexample to treating majority
+read concern alone as read-your-writes. The many zero cells remain observations, not proofs.
+\FloatBarrier
 
-\begin{table}[ht]
+\subsection{Replica lag}
+\begin{table}[H]
 \centering\small
-\caption{Network-partition and rollback results.}
-\begin{tabular}{@{}llrrrrr@{}}
-\toprule
-Scenario & Config & RYW & MR & MW & WFR & Errors\\
-\midrule
-2+1 partition & A & 3/3 & 3/3 & 0/3 & 0/3 & 3/15\\
-2+1 partition & B & 3/3 & 3/3 & 0/3 & 0/3 & 3/15\\
-2+1 partition & C & 0/3 & -- & 0/3 & 0/3 & 6/15\\
-2+1 partition & D & 0/3 & -- & 0/3 & 0/3 & 6/15\\
-1+1+1 isolation & A & 3/3 & 3/3 & 0/3 & 0/3 & 3/15\\
-1+1+1 isolation & B & -- & 0/3 & -- & -- & 9/15\\
-1+1+1 isolation & C & -- & -- & 0/3 & -- & 9/15\\
-1+1+1 isolation & D & -- & -- & -- & -- & 15/15\\
-Partition + rollback & A & 3/3 & 3/3 & 3/3 & 3/3 & 0/12\\
-Partition + rollback & B & -- & 0/3 & -- & 0/3 & 3/12\\
-Partition + rollback & C & 3/3 & -- & 3/3 & -- & 3/12\\
-Partition + rollback & D & -- & -- & -- & -- & 6/12\\
-\bottomrule
+\caption{Three-second replica lag: violations/eligible checks and errors/operations.}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule Config & RYW & MR & MW & WFR & Errors\\ \midrule
+A & 10/10 & 10/10 & 0/10 & 0/10 & 0/40\\
+B & 0/10 & -- & 0/10 & 0/10 & 10/40\\
+C & 10/10 & 10/10 & 0/10 & 0/10 & 0/40\\
+D & 0/10 & -- & 0/10 & 0/10 & 10/40\\
+E & 10/10 & 0/10 & 0/10 & 0/10 & 0/40\\
+F & 0/10 & -- & 0/10 & 0/10 & 10/40\\
+G & 10/10 & 10/10 & 0/10 & 0/10 & 0/40\\
+H & 0/10 & -- & 0/10 & 0/10 & 10/40\\ \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{The 2+1 partition}
-The typical partition produced the clearest availability contrast. After the old primary was
-isolated, it stepped down and the two-node side elected a new primary. That majority side
-successfully acknowledged W1 and W2, including majority writes. The minority side remained
-directly readable by the controller. A and B accepted the stale minority read, producing
-RYW and MR witnesses in all three repetitions. C and D refused to return an older snapshot:
-their minority reads reached the deadline, but their majority-side writes still succeeded.
-The final minority-side write probe failed for every configuration after step-down.
+\texttt{mongo2} applied oplog entries three seconds late, while R2 had a 700 ms deadline.
+Every non-causal configuration returned a successful stale read and violated RYW. A, C, and
+G also regressed from R1's new value to R2's old value, producing MR witnesses. E's R1 and R2
+both remained at the older majority snapshot, so RYW failed but MR did not: MR forbids moving
+backward, not remaining stale. Each causal partner B, D, F, and H sent an
+\texttt{afterClusterTime} bound; R2 timed out instead of returning an older value. Thus causal
+tracking converted a stale successful observation into reduced availability.
+\FloatBarrier
 
-\subsection{Complete isolation and rollback}
-With no pair of voters connected, a majority could not form. Configuration D consequently
-had no successful measured operations in the complete-isolation trials. This is an
-availability outcome, not a consistency violation. Weak configuration A could briefly
-observe stale data while the old primary detected quorum loss.
+\subsection{Secondary crash}
+\begin{table}[H]
+\centering\small
+\caption{Secondary crash: violations/eligible checks and errors/operations.}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule Config & RYW & MR & MW & WFR & Errors\\ \midrule
+A & 0/10 & 0/10 & 0/10 & 0/10 & 0/40\\
+B & 0/10 & 0/10 & 0/10 & 0/10 & 0/40\\
+C & 0/10 & 0/10 & 0/10 & 0/10 & 0/40\\
+D & 0/10 & 0/10 & 0/10 & 0/10 & 0/40\\
+E & 10/10 & 0/10 & 0/10 & 0/10 & 0/40\\
+F & 0/10 & 0/10 & 0/10 & 0/10 & 0/40\\
+G & 0/10 & 0/10 & 0/10 & 0/10 & 0/40\\
+H & 0/10 & 0/10 & 0/10 & 0/10 & 0/40\\ \bottomrule
+\end{tabular}
+\end{table}
 
-In the rollback scenario, an isolated $w:1$ W1 could be acknowledged and later disappear
-from the elected branch. Configuration A then witnessed all four violations. Configuration C
-retained causal read constraints but could still lose a non-durable $w:1$ predecessor,
-producing RYW and MW witnesses under the report's durable-history interpretation.
+\texttt{mongo2} was killed with SIGKILL; the primary and the remaining secondary retained a
+majority, and R2 used the surviving secondary. All 320 operations succeeded. E again exposed
+the mismatch between a $w:1$ acknowledgment and a majority snapshot, yielding 10 RYW
+witnesses without an MR regression. Its causal partner F returned no violation. The absence
+of failures demonstrates that losing one secondary does not remove quorum in this topology.
+\FloatBarrier
+
+\subsection{Primary crash and election}
+\begin{table}[H]
+\centering\small
+\caption{Primary crash and election: violations/eligible checks and errors/operations.}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule Config & RYW & MR & MW & WFR & Errors\\ \midrule
+A & 0/3 & 0/3 & 0/3 & 0/3 & 0/12\\
+B & 0/3 & 0/3 & 0/3 & 0/3 & 0/12\\
+C & 0/3 & 0/3 & 0/3 & 0/3 & 0/12\\
+D & 0/3 & 0/3 & 0/3 & 0/3 & 0/12\\
+E & 3/3 & 0/3 & 0/3 & 0/3 & 0/12\\
+F & 0/3 & 0/3 & 0/3 & 0/3 & 0/12\\
+G & 0/3 & 0/3 & 0/3 & 0/3 & 0/12\\
+H & 0/3 & 0/3 & 0/3 & 0/3 & 0/12\\ \bottomrule
+\end{tabular}
+\end{table}
+
+W1 and R1 ran before SIGKILL; R2 and W2 ran after the surviving nodes elected a new primary.
+All 96 operations succeeded, so the scenario demonstrates continuation after healthy
+failover rather than election-time availability. E produced RYW witnesses in all three
+histories for the same majority-snapshot mechanism seen above. Other configurations observed
+no violation. These results do not prove every $w:1$ write survives failover: replication was
+not blocked before the crash. The rollback scenario tests that harder case.
+\FloatBarrier
+
+\subsection{2+1 network partition}
+\begin{table}[H]
+\centering\small
+\caption{2+1 partition: violations/eligible checks and errors/operations.}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule Config & RYW & MR & MW & WFR & Errors\\ \midrule
+A & 3/3 & 3/3 & 0/3 & 0/3 & 3/15\\
+B & 0/3 & -- & 0/3 & 0/3 & 6/15\\
+C & 3/3 & 3/3 & 0/3 & 0/3 & 3/15\\
+D & 0/3 & -- & 0/3 & 0/3 & 6/15\\
+E & 3/3 & 0/3 & 0/3 & 0/3 & 3/15\\
+F & 0/3 & -- & 0/3 & 0/3 & 6/15\\
+G & 3/3 & 3/3 & 0/3 & 0/3 & 3/15\\
+H & 0/3 & -- & 0/3 & 0/3 & 6/15\\ \bottomrule
+\end{tabular}
+\end{table}
+
+The old primary was isolated while the two-node side retained quorum and elected a new
+primary. W1, R1, and W2 succeeded on that majority side. R2 probed the stale minority.
+Non-causal A, C, and G regressed and violated RYW/MR; E violated RYW but not MR because its
+majority reads stayed on the older committed snapshot. Causal B, D, F, and H refused to
+return below their causal bound, making MR inconclusive. The isolated write probe failed for
+all configurations; causal configurations also incurred the R2 timeout. This scenario
+cleanly separates majority-side availability from minority-side stale visibility.
+\FloatBarrier
+
+\subsection{1+1+1 complete isolation}
+\begin{table}[H]
+\centering\small
+\caption{1+1+1 isolation: violations/eligible checks and errors/operations.}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule Config & RYW & MR & MW & WFR & Errors\\ \midrule
+A & 3/3 & 3/3 & 0/3 & 0/3 & 3/15\\
+B & 0/3 & -- & 0/3 & 0/3 & 6/15\\
+C & -- & 3/3 & -- & -- & 9/15\\
+D & -- & -- & -- & -- & 12/15\\
+E & 3/3 & 0/3 & 0/3 & 0/3 & 3/15\\
+F & -- & -- & 0/3 & -- & 9/15\\
+G & -- & 0/3 & -- & -- & 9/15\\
+H & -- & -- & -- & -- & 15/15\\ \bottomrule
+\end{tabular}
+\end{table}
+
+All peer paths were blocked while host-to-container access remained. No two voters could
+form a majority. A and E could briefly complete $w:1$ work while the former primary detected
+quorum loss; A returned a regressing local read, while E returned an older majority snapshot.
+C returned enough successful local reads to witness MR regression, but its majority writes
+failed. As requirements accumulated from A toward H, errors increased from 3/15 to 15/15.
+H returned no successful measured operation. This is a safety-availability result: missing
+checks mean refusal or timeout, not hidden consistency violations.
+\FloatBarrier
+
+\subsection{Partition followed by rollback}
+\begin{table}[H]
+\centering\small
+\caption{Partition followed by rollback: violations/eligible checks and errors/operations.}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule Config & RYW & MR & MW & WFR & Errors\\ \midrule
+A & 3/3 & 3/3 & 3/3 & 3/3 & 0/12\\
+B & 3/3 & 3/3 & 3/3 & 3/3 & 0/12\\
+C & -- & 3/3 & -- & 3/3 & 3/12\\
+D & -- & 3/3 & -- & 3/3 & 3/12\\
+E & 3/3 & 0/3 & 3/3 & 0/3 & 0/12\\
+F & 3/3 & -- & 3/3 & -- & 3/12\\
+G & -- & 0/3 & -- & 0/3 & 3/12\\
+H & -- & -- & -- & -- & 6/12\\ \bottomrule
+\end{tabular}
+\end{table}
+
+The nodes were isolated before W1. A $w:1$ write could therefore be acknowledged only on the
+old primary, which was killed before the other two nodes elected a branch without W1. The W2
+pre-image then exposed loss of the predecessor. Every $w:1$ configuration (A, B, E, F)
+produced durable-history RYW and MW witnesses when those checks were eligible. Local-read A
+and B also witnessed MR and WFR; majority-read E remained monotonic, while F's causally
+bounded read failed and made MR/WFR inconclusive. Majority-write C, D, G, and H did not have
+an acknowledged isolated W1, so RYW/MW were correctly inconclusive. H sacrificed all relevant
+availability rather than acknowledge an unsafe history.
+\FloatBarrier
 
 \section{Comparison with predictions}
 
-The observations agree with the predictions:
+The observations agree with the documented boundaries and expose the purpose of each matched
+pair:
 \begin{itemize}
-  \item D produced no witnessed violation. When its required history or quorum was
-  unavailable, the operation waited or failed rather than returning a contradictory value.
-  \item C preserved MR and WFR for successful operations, but a rolled-back $w:1$ predecessor
-  can violate durable-history RYW and MW.
-  \item A exposed stale reads during lag and both partition types, and exposed all four
-  anomalies after rollback.
-  \item B demonstrated that majority read/write concerns without causal history tracking do
-  not by themselves guarantee RYW or MR when a client reads from a lagging or isolated member.
+  \item A/B and C/D show that causal tracking prevents successful backward reads even with
+  local read concern, although rollback can still invalidate a non-durable $w:1$ predecessor.
+  \item E/F isolates causal tracking with majority reads and $w:1$. E returned stale committed
+  snapshots; F waited or failed rather than cross its causal lower bound.
+  \item G/H shows that majority concerns without causal tracking are not a substitute for a
+  causal session. G violated RYW/MR under lag and 2+1 partition; H did not return a
+  contradictory successful value.
+  \item Comparing A/B/E/F ($w:1$) with C/D/G/H (majority write) shows why acknowledgment
+  durability matters during rollback. Majority-write histories became inconclusive when
+  quorum was absent instead of accepting the isolated predecessor.
 \end{itemize}
 
 Zero observed violations are not proofs of universal guarantees. Guarantees come from the
@@ -370,7 +502,7 @@ timeouts are evidence about availability rather than successful stale observatio
 
 The repository contains \texttt{compose.yaml}, \texttt{Dockerfile}, \texttt{lab.py},
 \texttt{docker\_backend.py}, \texttt{analyze.py}, checker unit tests, dependency pins, and a
-README. The archive \texttt{docker-run-2026-09-17-raw.zip} contains:
+README. The archive \path{matrix8-full-20260922-raw.zip} contains the formal A--H run:
 
 \begin{itemize}
   \item \texttt{history.jsonl}: operations, wire commands, returned values, causal tokens,
@@ -381,7 +513,7 @@ README. The archive \texttt{docker-run-2026-09-17-raw.zip} contains:
 \end{itemize}
 
 \texttt{RAW\_DATA\_MANIFEST.json} supplies SHA-256 digests for every original file and the
-ZIP. Re-analysis must report 208 histories, 856 operations and wire commands, 24 isolation
+ZIP. Re-analysis must report 416 histories, 1712 operations and wire commands, 48 isolation
 snapshots, and zero parameter or isolation audit failures.
 
 \section{AI usage disclosure}

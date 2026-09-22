@@ -10,6 +10,8 @@ from bson import json_util
 
 
 def analyze(root):
+    metadata=json.loads((root/'metadata.json').read_text())
+    configs=metadata['configs']
     rows=json_util.loads((root/'trials.json').read_text())
     groups=defaultdict(list)
     for row in rows: groups[(row['scenario'],row['config'])].append(row)
@@ -36,8 +38,12 @@ def analyze(root):
         cmd=e['command']
         _,key,label=cmd['comment'].split(':')
         cfg=by_trial[key]['config']
-        rc,wc,causal={'A':('local',1,False),'B':('majority','majority',False),
-                      'C':('majority',1,True),'D':('majority','majority',True)}[cfg]
+        if cfg not in configs:
+            failures.append([key,label,'configuration missing from metadata',cfg])
+            continue
+        rc=configs[cfg]['read']
+        wc=configs[cfg]['write']
+        causal=configs[cfg]['causal']
         if label.startswith('W') and cmd.get('writeConcern',{}).get('w')!=wc:
             failures.append([key,label,'wrong write concern'])
         if label.startswith('R'):
@@ -75,7 +81,7 @@ def analyze(root):
                command_parameter_failures=failures,
                isolation_snapshots=len(isolation),isolation_failures=isolation_failures,
                trial_ids_unique=len(by_trial)==len(rows),
-               run_status=json.loads((root/'metadata.json').read_text())['status'])
+               run_status=metadata['status'])
     (root/'summary.json').write_text(json.dumps(summary,indent=2))
     (root/'audit.json').write_text(json.dumps(audit,indent=2))
     lines=['# Measured results','',

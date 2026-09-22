@@ -1,6 +1,6 @@
-# Original measurements and detailed server logs
+# Formal A--H measurements and detailed server logs
 
-Download [docker-run-2026-09-17-raw.zip](docker-run-2026-09-17-raw.zip) for the complete, unmodified formal Docker run. The archive preserves the original directory and filenames. It contains 208 histories and 856 application operations from 17 September 2026, including the typical 2+1 partition; preliminary smoke tests and earlier native-process runs are excluded.
+Download [matrix8-full-20260922-raw.zip](matrix8-full-20260922-raw.zip) for the complete, unmodified formal Docker run. The archive contains 416 histories and 1,712 application operations from 22 September 2026 across all eight A--H configurations and seven operating scenarios. Preliminary smoke tests are excluded. The earlier `docker-run-2026-09-17-raw.zip` is retained only as legacy evidence and uses obsolete configuration IDs.
 
 | File | Contents |
 |---|---|
@@ -15,13 +15,14 @@ The MongoDB log files are server diagnostic logs, not a database volume backup o
 
 ## Verify and analyze
 
-[RAW_DATA_MANIFEST.json](RAW_DATA_MANIFEST.json) records SHA-256 values for every original file and the ZIP. Extract the archive into `results/`, then run:
+[RAW_DATA_MANIFEST.json](RAW_DATA_MANIFEST.json) records SHA-256 values for every original file and the ZIP. Extract the archive into a temporary directory, then analyze its `matrix8-full-01` directory:
 
 ```bash
-python3 -m zipfile -e docker-run-2026-09-17-raw.zip results
-.venv/bin/python analyze.py results/docker-run-2026-09-17
+mkdir -p tmp/raw-verification
+python3 -m zipfile -e matrix8-full-20260922-raw.zip tmp/raw-verification
+.venv/bin/python analyze.py tmp/raw-verification/matrix8-full-01
 ```
 
-Install dependencies as described in the main README first. The analysis should report 208 histories, 856 operations/commands, 24 isolation snapshots and no parameter/isolation audit failures. Each consistency cell counts violations / eligible checks. Timeouts are not treated as stale-value violations.
+The analysis should report 416 histories, 1,712 operations/commands, 48 isolation snapshots and no parameter/isolation audit failures. Each consistency cell counts violations / eligible checks. Timeouts are not treated as stale-value violations.
 
 The original metadata retains the measurement host's local paths and container identifiers for provenance. The repository is private. New locally generated `results/` directories and loose logs remain ignored by Git; this named, archived run is intentionally included.

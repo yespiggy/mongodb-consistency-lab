@@ -18,10 +18,16 @@ from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
 
 CONFIGS = {
+    # Matched causal-session pairs. Within each adjacent pair, read concern and
+    # write concern are identical; only causal history tracking changes.
     'A': dict(causal=False, read='local', write=1),
-    'B': dict(causal=False, read='majority', write='majority'),
-    'C': dict(causal=True, read='majority', write=1),
-    'D': dict(causal=True, read='majority', write='majority'),
+    'B': dict(causal=True, read='local', write=1),
+    'C': dict(causal=False, read='local', write='majority'),
+    'D': dict(causal=True, read='local', write='majority'),
+    'E': dict(causal=False, read='majority', write=1),
+    'F': dict(causal=True, read='majority', write=1),
+    'G': dict(causal=False, read='majority', write='majority'),
+    'H': dict(causal=True, read='majority', write='majority'),
 }
 MAX_READ_MS = 700
 WRITE_TIMEOUT_MS = 900
