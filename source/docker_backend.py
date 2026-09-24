@@ -79,7 +79,7 @@ class DockerPartition:
 class DockerCluster(Cluster):
     def __init__(self, work, log, base=29101):
         super().__init__(work,log,base)
-        self.directory=Path(__file__).resolve().parent
+        self.directory=Path(__file__).resolve().parents[1]/'config'
         self.project='cc-lab-'+uuid.uuid4().hex[:10]
         self.env=dict(os.environ, **{f'LAB_PORT{i}':str(base+i) for i in range(3)})
         self.created=False

@@ -252,7 +252,7 @@ def main():
     ap.add_argument('--base-port', type=int, default=29101)
     ap.add_argument('--seed', type=int, default=419)
     args = ap.parse_args()
-    from docker_backend import DockerCluster
+    from .docker_backend import DockerCluster
     DockerCluster.preflight()
     args.work_dir = args.work_dir.resolve()
     args.out = args.out.resolve()
@@ -262,13 +262,20 @@ def main():
     cluster = DockerCluster(args.work_dir, log, args.base_port)
     rows = []
     rng = random.Random(args.seed)
+    repo_root = Path(__file__).resolve().parents[1]
+    source_files = {
+        'lab.py': Path(__file__),
+        'docker_backend.py': Path(__file__).with_name('docker_backend.py'),
+        'compose.yaml': repo_root/'config'/'compose.yaml',
+        'Dockerfile': repo_root/'config'/'Dockerfile',
+    }
     meta = dict(started_utc=datetime.now(timezone.utc).isoformat(),
                 harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                 python=platform.python_version(), pymongo=pymongo.version,
                 platform=platform.platform(), mongod='pending container startup',
                 deployment_type='docker-compose',
-                source_sha256={name:hashlib.sha256((Path(__file__).parent/name).read_bytes()).hexdigest()
-                               for name in ['lab.py','docker_backend.py','compose.yaml','Dockerfile']},
+                source_sha256={name:hashlib.sha256(path.read_bytes()).hexdigest()
+                               for name,path in source_files.items()},
                 configs=CONFIGS, arguments={k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()},
                 timeouts=dict(read_ms=MAX_READ_MS, socket_ms=SOCKET_TIMEOUT_MS,
                               write_ms=WRITE_TIMEOUT_MS), status='running')

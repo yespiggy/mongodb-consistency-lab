@@ -1,7 +1,7 @@
 """Synthetic histories validate classification only; these are not measured results."""
 import unittest
 from types import SimpleNamespace
-from lab import Trial
+from source.lab import Trial
 
 
 def op(label, value=None, start=0, error=False):

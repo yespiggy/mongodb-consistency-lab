@@ -6,16 +6,26 @@ A three-container MongoDB replica set for investigating read-your-writes, monoto
 
 Docker Compose runs MongoDB 7.0.32 in three containers with separate IP addresses and data volumes. All members vote; mongo0 and mongo1 are electable, while mongo2 has priority 0. The host Python client uses ports 29101–29103 with direct connections and explicitly propagates causal session metadata.
 
+## Repository layout
+
+```text
+source/   experiment runner, workload, Docker backend, and analyzer
+tests/    checker unit tests
+config/   Docker Compose, Dockerfile, and Python dependencies
+results/  measured result summary
+data/     raw archive, manifest, and raw-data documentation
+```
+
 ## Run
 
 Install and start Docker Desktop (or Docker Engine with Compose), then run from this directory:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python -m unittest -v test_checker.py
-.venv/bin/python run.py --work-dir work/smoke-01 --out results/smoke-01 --normal 1 --lag 1 --failure 1 --fault-repeats 1
-.venv/bin/python analyze.py results/smoke-01
+.venv/bin/python -m pip install -r config/requirements.txt
+.venv/bin/python -m unittest -v tests.test_checker
+.venv/bin/python -m source.run --work-dir work/smoke-01 --out results/runs/smoke-01 --normal 1 --lag 1 --failure 1 --fault-repeats 1
+.venv/bin/python -m source.analyze results/runs/smoke-01
 ```
 
 Windows uses `.venv\Scripts\python.exe`. The first run downloads and builds the container image. Do not manually run Compose before the experiment: the runner creates its own project and fresh volumes. Use a new work/output directory each time.
@@ -23,12 +33,13 @@ Windows uses `.venv\Scripts\python.exe`. The first run downloads and builds the 
 Full experiment and analysis:
 
 ```bash
-.venv/bin/python run.py --work-dir work/full-01 --out results/full-01
-.venv/bin/python analyze.py results/full-01
+.venv/bin/python -m source.run --work-dir work/full-01 --out results/runs/full-01
+.venv/bin/python -m source.analyze results/runs/full-01
 ```
 
-The submission report source is `report/main.tex`. Compile it with Tectonic or a standard
-LaTeX installation after updating the group-member line on the title page.
+The submission report is provided separately as a PDF. This repository contains the
+experiment implementation, tests, configuration, measured summary, and archived raw
+evidence; report source files and compiled PDFs are intentionally excluded.
 
 With the eight-configuration matrix, the default run contains 640 histories: 20 normal histories per configuration and 10 per configuration in every other scenario. Measured read, socket, and write-concern timeouts are 5000, 7000, and 5000 ms. Use `--base-port 30101` if the default ports are occupied. The runner heals the network and stops its containers after collecting evidence, retaining their volumes.
 
@@ -51,11 +62,11 @@ Scenarios: normal operation, 3-second replica lag, secondary crash, primary cras
 
 ## Results and interpretation
 
-The formal A--H Docker run completed on 22 September 2026 with 640 histories and 2,720 attempted operations. Command monitoring captured 2,700 wire commands; 20 rollback operations were rejected by PyMongo before transmission while restarted direct connections temporarily reported no session capability. The run passed all command-parameter, wire-coverage, and network-isolation audits. Its aggregate results are in [MEASURED_RESULTS.md](MEASURED_RESULTS.md). Eight checker unit tests passed.
+The formal A--H Docker run completed on 22 September 2026 with 640 histories and 2,720 attempted operations. Command monitoring captured 2,700 wire commands; 20 rollback operations were rejected by PyMongo before transmission while restarted direct connections temporarily reported no session capability. The run passed all command-parameter, wire-coverage, and network-isolation audits. Its aggregate results are in [results/MEASURED_RESULTS.md](results/MEASURED_RESULTS.md). Eight checker unit tests passed.
 
 Cells count violations / eligible checks. Timeouts are operation errors, not stale-value violations; missing successful prerequisites make checks inconclusive. RYW/MW rollback checks use an explicitly durable-history interpretation. Zero observed violations do not prove a universal guarantee.
 
-The complete formal measurements and detailed logs for all three MongoDB nodes are included in [the 5-second-timeout A--H raw-data archive](matrix8-timeout5s-full-20260922-raw.zip). See [RAW_DATA.md](RAW_DATA.md) for its contents and analysis commands, and [RAW_DATA_MANIFEST.json](RAW_DATA_MANIFEST.json) for SHA-256 checksums. Earlier archives are retained only as legacy evidence. New runs generate their own evidence in `results/`.
+The complete formal measurements and detailed logs for all three MongoDB nodes are included in [the 5-second-timeout A--H raw-data archive](data/matrix8-timeout5s-full-20260922-raw.zip). See [data/RAW_DATA.md](data/RAW_DATA.md) for its contents and analysis commands, and [data/RAW_DATA_MANIFEST.json](data/RAW_DATA_MANIFEST.json) for SHA-256 checksums. New runs generate their own evidence in `results/runs/`.
 
 ## Inspect and clean up a run
 

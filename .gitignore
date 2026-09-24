@@ -7,10 +7,10 @@ venv/
 .env.*
 !.env.example
 work/
-results/
+results/runs/
 *.log
 report.pdf
-!report/report.pdf
+report/
 report.md
 report/build/
 report/build-*/
