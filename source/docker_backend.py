@@ -7,7 +7,7 @@ import subprocess
 import uuid
 from pathlib import Path
 
-from lab import Cluster, wait_for
+from .lab import Cluster, wait_for
 
 
 class ContainerHandle:

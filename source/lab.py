@@ -252,6 +252,8 @@ def main():
     ap.add_argument('--base-port', type=int, default=29101)
     ap.add_argument('--seed', type=int, default=419)
     args = ap.parse_args()
+    if any(getattr(args, name) < 0 for name in ('normal', 'lag', 'failure', 'fault_repeats')):
+        ap.error('scenario repetition counts must be non-negative')
     from .docker_backend import DockerCluster
     DockerCluster.preflight()
     args.work_dir = args.work_dir.resolve()
@@ -287,6 +289,8 @@ def main():
         (args.out/'metadata.json').write_text(json_util.dumps(meta,indent=2))
         cluster.snapshot('initialized')
         for scenario, n in [('normal',args.normal),('replication_lag',args.lag),('secondary_crash',args.failure)]:
+            if n == 0:
+                continue
             jobs = [(cfg,i) for cfg in CONFIGS for i in range(n)]
             rng.shuffle(jobs)
             ids = [f'{scenario}-{cfg}-{i}' for cfg,i in jobs]
