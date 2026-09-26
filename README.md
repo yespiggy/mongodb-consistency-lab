@@ -83,4 +83,4 @@ All containers share the physical host and, on Docker Desktop, the Linux VM. Thi
 - [Docker Desktop installation](https://docs.docker.com/desktop/setup/install/mac-install/)
 - [Compose services](https://docs.docker.com/reference/compose-file/services/)
 
-OpenAI Codex assisted with design, implementation, debugging, local execution, analysis, documentation and repository preparation during September 2026. Measurements were produced by real MongoDB executions. Group members should review the code and findings before submission.
+OpenAI Codex assisted with design, implementation and debugging. Measurements were produced by real MongoDB executions. 
