@@ -95,4 +95,4 @@ The experiment uses three Docker containers on one physical host, as permitted b
 - [PyMongo sessions](https://pymongo.readthedocs.io/en/4.10.1/api/pymongo/client_session.html)
 - [Docker Compose services](https://docs.docker.com/reference/compose-file/services/)
 
-Codex and Claude Code assisted with interpretation, implementation, debugging, and documentation. The formal measurements came from real MongoDB executions. Group members should review the code and findings before submission.
+
